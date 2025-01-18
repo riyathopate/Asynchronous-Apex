@@ -1,18 +1,14 @@
 Class: DailyLeadProcessor
 
 
-public class DailyLeadProcessor implements schedulable{
-    
-    public void execute(schedulableContext sc) {
-        List<lead> l_lst_new = new List<lead>();
-        List<lead> l_lst = new List<lead>([select id, leadsource from lead where leadsource = null]);
-        for(lead l : l_lst) {
-            l.leadsource = 'Dreamforce';
-            l_lst_new.add(l);
-        }
-        update l_lst_new;
+public class DailyLeadProcessor implements Schedulable  {
+    Public void execute(SchedulableContext SC){
+       List<Lead> LeadObj=[SELECT Id from Lead where LeadSource=null limit 200]; 
+        for(Lead l:LeadObj){
+            l.LeadSource='Dreamforce';
+            update l;
+        } 
     }
-
 }
 
 
@@ -21,24 +17,15 @@ public class DailyLeadProcessor implements schedulable{
 Class: DailyLeadProcessorTest
 
 @isTest
-public class DailyLeadProcessorTest {
-    @testSetup
-    static void setup(){
-        List<Lead> lstOfLead = new List<Lead>();
-        for(Integer i = 1; i <= 200; i++){
-            Lead ld = new Lead(Company = 'Comp' + i ,LastName = 'LN'+i, Status = 'Working - Contacted');
-            lstOfLead.add(ld);
-        }
-        Insert lstOfLead;
-    }
-    static testmethod void testDailyLeadProcessorScheduledJob(){
-        String sch = '0 5 12 * * ?';
+private class DailyLeadProcessorTest {
+	static testMethod void testDailyLeadProcessor() {
+		String CRON_EXP = '0 0 1 * * ?';
+		List<Lead> lList = new List<Lead>();
+	    for (Integer i = 0; i < 200; i++) {
+			lList.add(new Lead(LastName='Dreamforce'+i, Company='Test1 Inc.', Status='Open - Not Contacted'));
+		}
+		insert lList;
         Test.startTest();
-        String jobId = System.schedule('ScheduledApexTest', sch, new DailyLeadProcessor());
-        
-        List<Lead> lstOfLead = [SELECT Id FROM Lead WHERE LeadSource = null LIMIT 200];
-        System.assertEquals(200, lstOfLead.size());
-
-        Test.stopTest();
-    }
+		String jobId = System.schedule('DailyLeadProcessor', CRON_EXP, new DailyLeadProcessor()); 
+	} 
 }
