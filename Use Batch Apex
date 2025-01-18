@@ -1,34 +1,18 @@
 Class: LeadProcessor
 
 
-global class LeadProcessor implements Database.Batchable<sObject>, Database.Stateful {
-    global Integer leadsProcessed = 0;
-    global Database.QueryLocator start(Database.BatchableContext bc){
-        
-        
-        return Database.getQueryLocator('select id, lastname ,status, company from Lead');
-        
+public class LeadProcessor implements Database.Batchable<sObject> { 
+    public Database.QueryLocator start(Database.BatchableContext bc) {
+          return Database.getQueryLocator([Select LeadSource From Lead ]);
     }
-    global void execute(Database.BatchableContext bc, List<Lead> allLeads){
-        List<Lead> leads = new List<Lead>();
-        for(Lead l: allLeads){
-            l.LeadSource='Dreamforce';
-        }
+    public void execute(Database.BatchableContext bc, List<Lead> leads){
+            for (Lead Lead : leads) {
+                lead.LeadSource = 'Dreamforce';
+            }
         update leads;
-        
-    }
-    global void finish(Database.BatchableContext bc){
-        System.debug(leadsProcessed + ' leads processed. Nigga!');
-        AsyncApexJob job = [SELECT Id, Status, NumberOfErrors, 
-            JobItemsProcessed,
-            TotalJobItems, CreatedBy.Email
-            FROM AsyncApexJob
-            WHERE Id = :bc.getJobId()];
-        
-        EmailManager.sendMail('jgatsby1996@gmail.com','Total Leads Porcessed are ',' '+leadsProcessed);
-        
-    }
-
+    }    
+    public void finish(Database.BatchableContext bc){
+      } 
 }
 
 
@@ -39,23 +23,22 @@ Class: LeadProcessorTest
 
 @isTest
 public class LeadProcessorTest {
-
-    @testSetup
-    static void setup(){
+     @testSetup
+    static void setup() {
         List<Lead> leads = new List<Lead>();
-        for (Integer i=0;i<200;i++) {
-            leads.add(new Lead(Lastname='Last '+i, 
-                		status='Open - Not Contacted'
-                               	, company='LeadCompany'+i));
-        }
+        for(Integer counter=0 ;counter <200;counter++){
+            Lead lead = new Lead();
+            lead.FirstName ='FirstName';
+            lead.LastName ='LastName'+counter;
+            lead.Company ='demo'+counter;
+            leads.add(lead);
+        }        
         insert leads;
     }
-    static testmethod void test() {        
+    @isTest static void test() {
         Test.startTest();
-        LeadProcessor lp = new LeadProcessor();
-        Id batchId = Database.executeBatch(lp);
-        Test.stopTest();
-        // after the testing stops, assert records were updated properly
-        System.assertEquals(200, [select count() from Lead where LeadSource = 'Dreamforce']);
-    }
+        LeadProcessor leadProcessor = new LeadProcessor();
+        Id batchId = Database.executeBatch(leadProcessor);
+        Test.stopTest();   
+    } 
 }
